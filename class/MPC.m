@@ -35,6 +35,7 @@ classdef MPC<handle
         min_speed = -20/3.6;
         max_acc = 1.0;
         bodyObj
+        opt_var;
     end
     methods
         function obj = MPC(NX, NU, T, animate)
@@ -48,6 +49,7 @@ classdef MPC<handle
             if animate == true
                 obj.bodyObj = body('car', 10, eye(3), [0; 0; 0], [0; 0; 0], [1; 1; 1], 0.1, 0.1, false, 'cube');
             end
+            obj.opt_var = zeros(obj.NX*(obj.T+1) + obj.NU*obj.T, 1);
         end
         function [A, B, C] = get_linear_model_matrix(obj, v, phi, delta)
             A = zeros(obj.NX, obj.NX);
@@ -128,8 +130,7 @@ classdef MPC<handle
     
         function [oa, odelta, ox, oy, oyaw, ov] = linear_mpc_control(obj, xref, xbar, x0, dref)
             %initial guess for optimization variables
-            x0_vars = zeros(obj.NX*(obj.T+1) + obj.NU*obj.T, 1);
-        
+            var_len = obj.NX*(obj.T+1) + obj.NU*obj.T;
             % cost function
             cost_function = @(vars) cost_fun(obj, vars, xref);
             % constraints
@@ -142,13 +143,13 @@ classdef MPC<handle
             ub = [];
             % optimization options
             options = optimoptions('fmincon', 'Display', 'none', 'Algorithm', 'sqp');
-            [vars_opt, ~, exitflag] = fmincon(cost_function, x0_vars, A, b, Aeq, beq, lb, ub, constraint_function, options);
-
+            [vars_opt, ~, exitflag] = fmincon(cost_function, obj.opt_var, A, b, Aeq, beq, lb, ub, constraint_function, options);
+            vars_opt
             if exitflag > 0
-                ox = vars_opt(1:obj.NX:end);
-                oy = vars_opt(2:obj.NX:end);
-                ov = vars_opt(3:obj.NX:end);
-                oyaw = vars_opt(4:obj.NX:end);
+                ox = vars_opt(1:obj.NX:var_len-obj.NU*obj.T);
+                oy = vars_opt(2:obj.NX:var_len-obj.NU*obj.T);
+                ov = vars_opt(3:obj.NX:var_len-obj.NU*obj.T);
+                oyaw = vars_opt(4:obj.NX:var_len-obj.NU*obj.T);
                 oa = vars_opt(obj.NX*(obj.T+1)+1:obj.NU:end);
                 odelta = vars_opt(obj.NX*(obj.T+1)+2:obj.NU:end);
             else
@@ -160,6 +161,7 @@ classdef MPC<handle
                 oyaw = NaN;
                 ov = NaN;
             end
+            obj.opt_var = vars_opt;
         end
         function cost = cost_fun(obj, vars, xref)
             % Extract variables
@@ -250,12 +252,12 @@ classdef MPC<handle
             ov = [];
 
             if any(isnan(oa)) || any(isnan(od))
-                oa = zeros(1, obj.T);
-                od = zeros(1, obj.T);
+                oa = zeros(obj.T, 1);
+                od = zeros(obj.T, 1);
             end
+
             for i=1:obj.max_iter
                 xbar = prediction(obj, x0, oa, od, xref);
-
                 poa = oa; pod = od;
                 [oa, od, ox, oy, oyaw, ov] = linear_mpc_control(obj, xref, xbar, x0, dref);
                 du = sum(abs(oa-poa)) + sum(abs(od-pod));

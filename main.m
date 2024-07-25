@@ -50,12 +50,20 @@ while max_time >=time
     a(end+1) = ai;
 
     if animate == true
+        oz = zeros(length(ox), 1);
         mpc.bodyObj.pos_com = [state.x;state.y;0];
         mpc.bodyObj.update();
         fig = set_fig_position(figure(1),'position',[0.5,0.5,0.2,0.35],'ADD_TOOLBAR',1,'AXES_LABEL',1,'view_info',[60,45],'axis_info',[-5, 50, -5, 50, -1, 2],'SET_DRAGZOOM',1,'GRID_ON',1);
         plot_cube(mpc.bodyObj.T_val, [-mpc.bodyObj.size(1)/2, -mpc.bodyObj.size(2)/2, -mpc.bodyObj.size(3)/2], mpc.bodyObj.size, ...
         'subfig_idx',2,'color','r','alpha',1,'edge_color','r'); % plot cube 
         plot_curve_3d(cx,cy,cz,'subfig_idx', 1, 'color', 'k');
+        path_color = [0.2, 0.2, 0.2];
+        for i=1:length(ox)
+            path = [ox(i), oy(i), oz(i)];
+            plot_spheres(path, 'subfig_idx', i, 'sr', 0.1,'colors',path_color, 'sfa',0.8);
+            % plot_spheres(path(:, i)','subfig_idx',i,...
+            % 'sr', 0.001,'colors',path_color,'sfa',0.8);
+        end
         drawnow;
         if ~ishandle(fig), break; end
     end 
