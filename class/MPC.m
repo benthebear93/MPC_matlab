@@ -144,7 +144,6 @@ classdef MPC<handle
             % optimization options
             options = optimoptions('fmincon', 'Display', 'none', 'Algorithm', 'sqp');
             [vars_opt, ~, exitflag] = fmincon(cost_function, obj.opt_var, A, b, Aeq, beq, lb, ub, constraint_function, options);
-            vars_opt
             if exitflag > 0
                 ox = vars_opt(1:obj.NX:var_len-obj.NU*obj.T);
                 oy = vars_opt(2:obj.NX:var_len-obj.NU*obj.T);

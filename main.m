@@ -28,7 +28,8 @@ state.yaw = wrapToPi(state.yaw - cyaw(1)) + cyaw(1);
 [t, d, a] = deal(0);
 odelta = NaN;
 oa = NaN;
-
+%% INIT MPC
+mpc = MPC(4, 2, 5, animate);
 [target_ind, ~] = mpc.calc_nearest_index(state, cx, cy, cyaw, 1);
 while max_time >=time
     [xref, target_ind, dref] = mpc.calc_ref_trajectory(state, cx, cy, cyaw, ck, sp, dl, target_ind);
@@ -57,10 +58,10 @@ while max_time >=time
         plot_cube(mpc.bodyObj.T_val, [-mpc.bodyObj.size(1)/2, -mpc.bodyObj.size(2)/2, -mpc.bodyObj.size(3)/2], mpc.bodyObj.size, ...
         'subfig_idx',2,'color','r','alpha',1,'edge_color','r'); % plot cube 
         plot_curve_3d(cx,cy,cz,'subfig_idx', 1, 'color', 'k');
-        path_color = [0.2, 0.2, 0.2];
+        path_color = [0, 0, 225/256];
         for i=1:length(ox)
             path = [ox(i), oy(i), oz(i)];
-            plot_spheres(path, 'subfig_idx', i, 'sr', 0.1,'colors',path_color, 'sfa',0.8);
+            plot_spheres(path, 'subfig_idx', i, 'sr', 0.2,'colors',path_color, 'sfa',0.8);
             % plot_spheres(path(:, i)','subfig_idx',i,...
             % 'sr', 0.001,'colors',path_color,'sfa',0.8);
         end
